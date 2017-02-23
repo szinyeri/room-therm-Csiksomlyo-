@@ -42,17 +42,14 @@ end
 -- hőmérséklet ellenőrzése és fűtés kapcsolása
 -- 5 percenként történik timer3 callback segítségével, vagy érték változásakor
 function get_env()
-   local temps = {}
+  -- local temps = {}
     if isremoteIP == false or isremIPtout==true then -- nincs távoli hőmérő, vagy nem válaszol
       print("no remote temp")
     else -- távoli szobahőmérőt olvassuk ki
         getRemoteTemp() -- az ertekek beerkezese utan vezérel
     end
   temps = dofile("gettemps.lc")
-  print(string.format(" remote:%2.1f, %2.1f temps: %2.1f, %2.1f%%, %2.1f, %2.1f ", remote_env[1]/10, remote_env[2]/10, temps[1], temps[2], temps[3], temps[4]))
-  print (string.format("futes.lua - get_env() - mert_T=%2.1f;  humidity=%2.1f%% elore=%2.1f vissza1=%2.1f, vissza2=%2.1f, vissza3=%2.1f",
-           remote_env[2]/10, remote_env[1]/10, temps[1], temps[2],  temps[3], temps[4]))
-        syslog(string.format("futes.lua - get_env() - mert_T=%2.1f;  humidity=%2.1f%% elore=%2.1f vissza1=%2.1f, vissza2=%2.1f, vissza3=%2.1f",
+  syslog(string.format("futes.lua - get_env() - mert_T=%2.1f;  humidity=%2.1f%% elore=%2.1f vissza1=%2.1f, vissza2=%2.1f, vissza3=%2.1f",
             remote_env[2]/10, remote_env[1]/10, temps[1], temps[2],  temps[3], temps[4]))
 end
 
@@ -158,11 +155,13 @@ function getRemoteTemp()
 end
 
 function uptime()
-    local upt =tmr.time()
+     local upt =tmr.time()
     local ora = math.floor(upt/3600)
+    local nap = math.floor(ora/24)
     local perc = math.floor((upt-ora*3600)/60)
     local mperc = upt-ora*3600-perc*60
-    return string.format("%dh %dmin %dsec", ora, perc, mperc)
+    ora = ora - nap*24
+    return string.format("%03d:%02d:%02d:%02d", nap, ora, perc, mperc)
 end
 
 -- hőmétő i2c kiolvasásakor transmission error kezelésére
