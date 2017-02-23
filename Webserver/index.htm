@@ -1,0 +1,428 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<script src = "https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script>
+	var zonetable, zonecfg;
+  $( document ).ready(function() {
+				console.log( "document loaded" );
+				var allInput = $( "input" );
+				var arr = jQuery.makeArray( allInput );
+			//	console.log(allInput);
+			//	console.log(arr);
+				});
+
+	$( window ).load(function() {
+		$( "#ment"			).on( "click", rangeMouseUp);
+		$( "#frissit"		).on( "click", getStatus);
+		$( "#futeskapcs").on( "click", FutesKapcs);
+    $( "#futesmode"	).on( "click", SetMode);
+    $("#temprange"	).on("input change", sethomval);
+		$( "#progsave"	).on( "click", saveHetiProg );
+
+		console.log( "window loaded" );
+		getStatus();
+   }); // $( window ).load(function()
+
+function saveHetiProg( event ) {
+ 		if (confirm( "Heti program mentése..." )) {
+ 			$('#process-status').html("Zóna időzítések mentése...");
+ 			//beállítások kiolvasása
+ 			var hetiprog = "Mon|00:02,1,100|06:00,1,150|07:00,1,180|08:00,1,228|18:00,1,180|19:00,1,150|Tue|00:01,1,100|06:00,1,150|07:00,1,180|08:00,1,228|18:00,1,180|19:00,1,150|Thu|00:01,1,100|06:00,1,150|07:00,1,180|08:00,1,228|18:00,1,180|19:00,1,150|Wed|00:01,1,100|06:00,1,150|07:00,1,180|08:00,1,228|18:00,1,180|19:00,1,150|Fri|00:01,1,100|06:00,1,150|07:00,1,180|08:00,1,228|18:00,1,180|19:00,1,150|Sat|00:01,1,100|06:00,1,150|07:00,1,180|08:00,1,228|18:00,1,180|19:00,1,150|Sun|00:01,1,100|06:00,1,150|07:00,1,180|08:00,1,228|18:00,1,180|19:00,1,150|END|";
+			var filename = "ahetiprog";
+			console.log("file hossz = " + hetiprog.length);
+ 				// file elküldése ESP-nek
+ 			console.log("remove "+filename+".tmp");
+ 			$.get("/?removefile="+filename+".tmp", setTimeout (write_tmp , 500))
+
+ 			function write_tmp(data) {
+ 				console.log("write "+filename);
+ 				$.get("/?replacepipe=1&file="+filename+"&write=" + hetiprog, setTimeout (remove_file , 500));
+ 			}
+ 			function remove_file(data) {
+ 				console.log("remove "+filename);
+ 				$.get("/?removefile="+filename, setTimeout (rename_file , 500));
+ 			}
+ 			function rename_file(data) {
+ 				console.log("rename " + filename);
+ 				$.get("/?renameto="+filename+"&from="+filename+".tmp", setTimeout (saved_status , 500));
+ 			}
+ 			function saved_status(data) {
+ 				console.log("saved "+filename);
+ 				//alert("Elmentve...");
+ 				$('#process-status').html("Heti program mentve.");
+ 			}
+
+ 		 // file ellenorzese
+ /*      $.get(filename+'.tmp', function(data){
+ 				console.log("check file status ");
+ 				zonecfg = data.split("\n");
+ 				var statusOK = true;
+ 				zonefile.forEach( function(str, idx) {
+ 					if (zonecfg[idx] == str) {
+ 						console.log("OK " + idx);
+ 					} else {
+ 						console.log("failed" + idx + " " + zonecfg[idx] + " " + str);
+ 						statusOK=false;
+ 					}
+ 				});
+ 				if (statusOK) { */
+
+ 		/*			});
+ 				} else {
+ 					console.log("save failed");
+ 				} */
+			}
+	}
+
+function getStatus(){
+		$('#process-status').html( "Frissítés...");
+		$.get("/?status=1", fillform );
+	}
+
+function sethomval(){
+	var a= $("[id=temprange]").val();
+//	$( "#hom_set").html( a.slice(0,4)+"."+a.slice(2,3));
+	$( "#hom_set").html( a/10);
+}
+
+function SetMode(){
+	if ($( "button[id='futesmode']").val()==0) {
+		$('#process-status').html( "Automatikus üzemmódra kapcsolás...");
+		$.get("/?autofutes=1", function(data){
+			fillform(data)
+		});
+	} else {
+		$('#process-status').html( "Kézi üzemmódra kapcsolás...");
+		$.get("/?autofutes=0", function(data){
+			fillform(data)
+		});
+	}
+}
+
+function FutesKapcs(){
+	if ($( "button[id='futeskapcs']").val()=="1") {
+		$('#process-status').html( "Fűtés kikapcsolás...");
+		$.get("/?zona=1&start=0&interv=30", function(data){
+			fillform(data)
+		});
+	} else {
+		$('#process-status').html( "Fűtés bekapcsolás...");
+		$.get("/?zona=1&start=1&interv=30", function(data){
+			fillform(data)
+		});
+	}
+}
+
+function rangeMouseUp(){
+	set_T = $("[id=temprange]").val();
+	// ha változott, akkor leküldi nodemcu-nak
+	if ( env && (set_T != env.man_T) ) {
+		$('#process-status').html( "Frissítés...");
+		$.get("/?settemp="+ set_T, function(data){
+			fillform(data);
+		});
+	} else { // nem változott
+			$('#process-status').html( "Nem változott...");
+			setTimeout (function(){$('#process-status').html(""); } , 500);
+	}
+}
+
+function fillform(ertekek){
+	$('#process-status').html(ertekek);
+	if (ertekek.slice(0,13) !=' {"automode":') {
+		// nem jo valasz jott, ezert lecsereljuk egy defaultra
+		ertekek = '{"automode":"false", "auto_T":111, "man_T":111, "futes":0, "humi_1":111, "hom_1":111, "humi_2":111, "hom_2":111 }'
+	}	else {
+		// ha nem jol jön debug miatt, akkor itt helyre tesszük
+		ertekek=ertekek.slice(0, ertekek.search("}")+1);
+	}
+	env = JSON.parse(ertekek);
+	$( "#hom_1").html( env.hom_1/10+" C" );
+	$( "#humi_1").html( env.humi_1/10+"%");
+    $( "#hom_2").html( env.hom_2/10+" C" );
+   $( "#humi_2").html( env.humi_2/10+"%");
+	// auto gomb beállítása és szinezése
+	if (env.automode =="true") {
+		$( "#hom_set").html( env.auto_T/10);
+		$( "#temprange").val(env.auto_T);
+		$( "button[id='futesmode']").val("1");
+		$( "button[id='futesmode']").html("Auto üzemmód");
+		$( "button[id='futesmode']").css('background-color','red');
+	} else {
+		$( "#hom_set").html( env.man_T/10);
+		$( "#temprange").val(env.man_T);
+		$( "button[id='futesmode']").val("0");
+		$( "button[id='futesmode']").html("Kézi üzemmód");
+		$( "button[id='futesmode']").css('background-color','Lime');
+	}
+// manual gomb beállítása és szinezése
+	if (env.futes == 0) {
+		$( "button[id='futeskapcs']").val("0");
+		$( "button[id='futeskapcs']").html("Fűtés kikapcsolt");
+		$( "button[id='futeskapcs']").css('background-color','rgb(200, 200, 200)');
+	} else if ( env.futes==1 ){
+		$( "button[id='futeskapcs']").val("1");
+		$( "button[id='futeskapcs']").html("Fűtés bekapcsolt");
+		$( "button[id='futeskapcs']").css('background-color','red');
+	}
+}
+
+  // kitölti a táblázatot a zoncfg adatokkal
+function filltable(data) {
+	// $('#process-status').html(data);
+  zonecfg = data.split("\n");
+  var zonetable;
+  var datum;
+	var stido;
+	var zona = 'string';
+	var interv;
+	if (zonecfg[0] =="Mon") {
+		$( "input[type='checkbox']").prop('checked', false); // összes checkbox nullázása
+		for (i = 0; i < zonecfg.length-1; i++) {
+			if (/[a-z|A-z]+/.test(zonecfg[i]) ) {
+				datum = /[a-z|A-z]+/.exec(zonecfg[i]);
+				console.log("nap found:" + datum);
+			} else {
+				stido = /[0-9]{2}:[0-9]{2}/.exec(zonecfg[i]);
+				zona = /,[0-9]{1},/.exec(zonecfg[i]);
+				str= zona.toString();
+				str = str.substr(1,1);
+				interv = /[0-9]+$/.exec(zonecfg[i]);
+				$( "input[id=\'" + datum +"\'][name=\'wd"+ str +"\']").prop('checked', true); //checkbox
+				$( "input[id=\'start" + str +"\']").val(stido); // start time
+				$( "input[id=\'interv" + str +"\']").val("00:"+interv); // interval
+			}
+		}
+	}
+}
+
+   </script>
+<style>
+.trange{
+    font-size: 22px;
+    padding: 30px 0px;
+    margin: 10px 24px;
+     cursor: pointer;
+      width: 480px;
+    height: 50px;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    background-color: lightgreen;
+    font-size: 12px;
+}
+.temp{
+	 font-size: 25px;
+	  background-color: #aa9900;
+
+	}
+button{
+     border-radius: 12px;
+     background-color: #aa0044;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 25px;
+    margin: 10px 24px;
+    cursor: pointer;
+}
+.vezbutton{
+    border-radius: 12px;
+    background-color: #009900;
+    border: none;
+    color: white;
+    padding: 30px 50px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 25px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+th, td {
+    padding: 5px;
+    align="center";
+    width: 80px;
+		height: 30px;
+}
+
+body {
+			font: 0.8em arial, helvetica, sans-serif;
+		}
+
+		#header ul {
+			list-style: none;
+			padding: 0;
+			margin: 0;
+		}
+
+		#header li {
+			float: left;
+			border: 1px solid #bbb;
+			border-bottom-width: 0;
+			margin: 0;
+		}
+
+		#header a {
+			text-decoration: none;
+			display: block;
+			background: #eee;
+			padding: 0.24em 1em;
+			color: #00c;
+			width: 8em;
+			text-align: center;
+		}
+
+		#header a:hover {
+			background: #ddf;
+		}
+
+		#header #selected {
+			border-color: black;
+		}
+
+		#header #selected a {
+			position: relative;
+			top: 1px;
+			background: white;
+			color: black;
+			font-weight: bold;
+		}
+
+		#content {
+			border: 1px solid black;
+			clear: both;
+			padding: 0 1em;
+		}
+
+		h1 {
+			margin: 0;
+			padding: 0 0 1em 0;
+		}
+
+
+
+</style>
+</head>
+<body>
+<h1> ESP-8266 Szobatermosztát</h1>
+
+<p>
+
+
+	<button class="vezbutton" id="futeskapcs" value="0">Fűtés kikapcsolt</button>
+
+	<button class="vezbutton" id="futesmode" value ="1" style="background-color:red">Auto üzemmód</button>
+	<br><button class="temp" id="hom_set" style="display:inline-block">20.0</button>
+  <input id ="temprange" class="trange" type="range" name="settemp" value="20" step="1" min="20" max ="300" onmouseup="rangeMouseUp()"></input>
+	<br>Hőm.1:<button class="temp" id="hom_1" > 20.0 C</button>
+	Pára.1:<button class="temp" id="humi_1">20.0%</button>
+
+<br>Hőm.2:<button class="temp" id="hom_2" > 20.0 C</button>
+    Pára.2:<button class="temp" id="humi_2">20.0%</button>
+
+<br>
+<p><button type="button" id="ment" >Ment</button>
+<button type="button" id="frissit" >Frissít</button>
+<button type="button" id="progsave" >Heti program</button>
+
+</p>
+
+<div id="header">
+		<h1>Heti program</h1>
+		<ul>
+			<li id="selected"><a href="#">Hétfő</a></li>
+			<li><a href="#">Kedd</a></li>
+			<li><a href="#">Szerda</a></li>
+			<li><a href="#">Csütörtök</a></li>
+			<li><a href="#">Péntek</a></li>
+			<li><a href="#">Szombat</a></li>
+			<li><a href="#">Vasárnap</a></li>
+		</ul>
+	</div>
+
+	<ul class="rtabs">
+	    <li><a href="#view1">Features</a></li>
+	    <li><a href="#view2">How to Use</a></li>
+	    <li><a href="#view3">Source Code</a></li>
+	</ul>
+	<div class="panel-container">
+	    <div id="view1">
+	        content 1
+	    </div>
+	    <div id="view2">
+	        content 2
+	    </div>
+	    <div id="view3">
+	        content 3
+	    </div>
+	</div>
+
+
+
+<table style="width:100%">
+ <tr >
+	 		<th>M</th>
+      <th>Start idő</th>
+			<th>Stop idő</th>
+			<th>Hőmérséklet</th>
+ </tr>
+ <tr id="z1" >
+	   <td><input id ="Mon" class="cb" type="checkbox" name="wd1" value="1"> </td>
+		<td >Sziklakert</td>
+	  <td><input id ="Mon" class="cb" type="checkbox" name="wd1" value="1"> </td>
+    <td><input id ="Tue" class="cb" type="checkbox" name="wd1" value="1"> </td>
+    <td><input id ="Thu" class="cb" type="checkbox" name="wd1" value="1"> </td>
+    <td><input id ="Wed" class="cb" type="checkbox" name="wd1" value="1"> </td>
+    <td><input id ="Fri" class="cb" type="checkbox" name="wd1" value="1"> </td>
+    <td><input id ="Sat" class="cb" type="checkbox" name="wd1" value="1"> </td>
+    <td><input id ="Sun" class="cb" type="checkbox" name="wd1" value="1"> </td>
+   </tr>
+ <tr id="z2" >
+	   <td><input id ="Mon" class="cb" type="checkbox" name="wd1" value="1"> </td>
+	 	<td>Csepegtető</td>
+    <td><input id ="Mon" class="cb" type="checkbox" name="wd2" value="1"> </td>
+    <td><input id ="Tue" class="cb" type="checkbox" name="wd2" value="1"> </td>
+    <td><input id ="Thu" class="cb" type="checkbox" name="wd2" value="1"> </td>
+    <td><input id ="Wed" class="cb" type="checkbox" name="wd2" value="1"> </td>
+    <td><input id ="Fri" class="cb" type="checkbox" name="wd2" value="1"> </td>
+    <td><input id ="Sat" class="cb" type="checkbox" name="wd2" value="1"> </td>
+    <td><input id ="Sun" class="cb" type="checkbox" name="wd2" value="1"> </td>
+   </tr>
+ <tr id="z3" >
+	   <td><input id ="Mon" class="cb" type="checkbox" name="wd1" value="1"> </td>
+		<td>3. zóna</td>
+    <td><input id ="Mon" class="cb" type="checkbox" name="wd3" value="1"> </td>
+    <td><input id ="Tue" class="cb" type="checkbox" name="wd3" value="1"> </td>
+    <td><input id ="Thu" class="cb" type="checkbox" name="wd3" value="1"> </td>
+    <td><input id ="Wed" class="cb" type="checkbox" name="wd3" value="1"> </td>
+    <td><input id ="Fri" class="cb" type="checkbox" name="wd3" value="1"> </td>
+    <td><input id ="Sat" class="cb" type="checkbox" name="wd3" value="1"> </td>
+    <td><input id ="Sun" class="cb" type="checkbox" name="wd3" value="1"> </td>
+   </tr>
+<tr id="z4" >
+	  <td><input id ="Mon" class="cb" type="checkbox" name="wd1" value="1"> </td>
+		<td>4. zóna</td>
+    <td><input id ="Mon" class="cb" type="checkbox" name="wd4" value="1"> </td>
+    <td><input id ="Tue" class="cb" type="checkbox" name="wd4" value="1"> </td>
+    <td><input id ="Thu" class="cb" type="checkbox" name="wd4" value="1"> </td>
+    <td><input id ="Wed" class="cb" type="checkbox" name="wd4" value="1"> </td>
+    <td><input id ="Fri" class="cb" type="checkbox" name="wd4" value="1"> </td>
+    <td><input id ="Sat" class="cb" type="checkbox" name="wd4" value="1"> </td>
+    <td><input id ="Sun" class="cb" type="checkbox" name="wd4" value="1"> </td>
+   </tr>
+</table>
+
+<pre id="process-status"></pre>
+<br>
+</div>
+
+</form>
+</body>
+</html>
