@@ -91,3 +91,19 @@ function FutesBeKapcs(bekapcs)
         syslog(string.format("futes_proc.lua - FutesBeKapcs(): bekapcs=%s ; automode=%s", tostring(bekapcs), tostring(automode) ))
     end
 end
+
+function bs2hex(b)
+     local t = {}
+     for i = 1, #b do
+          t[i] = string.format('%02X', b:byte(i))
+     end
+     return table.concat(t)
+end
+
+function hex2bs(h)
+    local t={}
+    for k in h:gmatch"(%x%x)" do
+        table.insert(t,string.char(tonumber(k,16)))
+    end
+    return table.concat(t)
+end

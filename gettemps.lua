@@ -10,6 +10,7 @@ end
 if sensornum ~= nil and sensornum ~=0 then -- ha talált sensort, akkor kiolvassa
     for tn= 1, sensornum do
         temp[tn] = t.readNumber(sensors[tn],t.C)
+       -- print(bs2hex(sensors[tn]))
         tmr.delay(100)
     end
 end

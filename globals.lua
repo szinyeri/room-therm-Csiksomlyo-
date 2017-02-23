@@ -7,6 +7,7 @@ max_T = 300 -- maximum beállítható hőmérséklet
 prev_temp = 0 -- időzítésben az aktuális időhöz képest előzőleg megadott hőmérséklet érték
 lastenv = {0,0}
 remote_env ={0,0,0,0}
+temps = {0,0,0,0}
 napok ={"Sun", "Mon", "Tue", "Thu", "Wed", "Fri", "Sat"}
 automode = false -- ha automatikus üzemmódban van, azaz az előre beállítottak alapján kapcsol
 hist = 3 -- histerezis 

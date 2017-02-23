@@ -121,8 +121,8 @@ srv:listen(80,function(conn)
                     logmsg = logmsg.." node.compile done ".._GET.file
                 end
                 -- ha nem kell file-t visszaküldeni, akkor a rendszer aktuális állapotát küldi vissza
-                client:send(string.format("HTTP/1.1 200 OK%s {\"automode\":\"%s\", \"auto_T\":%d, \"man_T\":%d, \"futes\":%d, \"humi_1\":%d, \"hom_1\":%d, \"humi_2\":%d, \"hom_2\":%d}",
-                    httpmsg, tostring(automode), auto_T, man_T, gpio.read(zona_pin), lastenv[1], lastenv[2], remote_env[1], remote_env[2]))
+                client:send(string.format("HTTP/1.1 200 OK%s {\"automode\":\"%s\", \"auto_T\":%d, \"man_T\":%d, \"futes\":%d, \"humi_2\":%d, \"hom_2\":%d, \"elore\":%d, \"vissza_1\":%d, \"vissza_2\":%d, \"vissza_3\":%d}",
+                    httpmsg, tostring(automode), auto_T, man_T, gpio.read(zona_pin), remote_env[1], remote_env[2], temps[1], temps[2], temps[3], temps[4]))
             else
                 print("requested file:", tgtfile, node.heap())
                 if file.open(tgtfile,"r") then

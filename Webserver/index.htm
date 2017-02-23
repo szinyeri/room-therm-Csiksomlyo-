@@ -132,16 +132,18 @@ function fillform(ertekek){
 	$('#process-status').html(ertekek);
 	if (ertekek.slice(0,13) !=' {"automode":') {
 		// nem jo valasz jott, ezert lecsereljuk egy defaultra
-		ertekek = '{"automode":"false", "auto_T":111, "man_T":111, "futes":0, "humi_1":111, "hom_1":111, "humi_2":111, "hom_2":111 }'
+		ertekek = '{"automode":"false", "auto_T":111, "man_T":111, "futes":0, "humi_2":111, "hom_2":111 , "elore":111, "vissza_1":111, "vissza_2":111, "vissza_3":111 }'
 	}	else {
 		// ha nem jol jön debug miatt, akkor itt helyre tesszük
 		ertekek=ertekek.slice(0, ertekek.search("}")+1);
 	}
 	env = JSON.parse(ertekek);
-	$( "#hom_1").html( env.hom_1/10+" C" );
-	$( "#humi_1").html( env.humi_1/10+"%");
+	$( "#elore").html( env.elore+" C" );
+	$( "#vissza_1").html( env.vissza_1+" C");
+	$( "#vissza_2").html( env.vissza_2+" C");
+	$( "#vissza_3").html( env.vissza_3+" C");
     $( "#hom_2").html( env.hom_2/10+" C" );
-   $( "#humi_2").html( env.humi_2/10+"%");
+    $( "#humi_2").html( env.humi_2/10+"%");
 	// auto gomb beállítása és szinezése
 	if (env.automode =="true") {
 		$( "#hom_set").html( env.auto_T/10);
@@ -321,8 +323,10 @@ body {
 	<button class="vezbutton" id="futesmode" value ="1" style="background-color:red">Auto üzemmód</button>
 	<br><button class="temp" id="hom_set" style="display:inline-block">20.0</button>
   <input id ="temprange" class="trange" type="range" name="settemp" value="20" step="1" min="20" max ="300" onmouseup="rangeMouseUp()"></input>
-	<br>Hőm.1:<button class="temp" id="hom_1" > 20.0 C</button>
-	Pára.1:<button class="temp" id="humi_1">20.0%</button>
+	<br>E<button class="temp" id="elore" > 20.0 C</button>
+	V 1<button class="temp" id="vissza_1">20.0</button>
+V 2<button class="temp" id="vissza_2">20.0</button>
+V 3:<button class="temp" id="vissza_3">20.0</button>
 
 <br>Hőm.2:<button class="temp" id="hom_2" > 20.0 C</button>
     Pára.2:<button class="temp" id="humi_2">20.0%</button>
